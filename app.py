@@ -101,19 +101,24 @@ if uploaded_file:
 
     output = BytesIO()
     wb = Workbook()
-    ws1 = wb.active
-    ws1.title = "Enriched Emails"
+    ws2 = wb.active
+    ws2.title = "Original Highlights"
     for r in dataframe_to_rows(enriched_df, index=False, header=True):
         ws1.append(r)
 
-    ws2 = wb.create_sheet("Original Highlights")
+    ws1 = wb.create_sheet("Enriched Emails")
     for r_idx, row in enumerate(dataframe_to_rows(styled_df, index=False, header=True), 1):
         ws2.append(row)
         if r_idx == 1:
             continue
         for col in email_cols:
             email = styled_df.iloc[r_idx - 2][col]
-            if str(email).strip().lower() in risky_emails:
+            reason_map = enriched_df.set_index("Email").get("Reason", pd.Series()).to_dict()
+            email_lower = str(email).strip().lower()
+            if email_lower in risky_emails:
+                cell.font = Font(color="FF0000")
+            elif reason_map.get(email_lower, "").lower() == "accepted_email":
+                cell.font = Font(color="00AA00")
                 cell = ws2.cell(row=r_idx, column=styled_df.columns.get_loc(col) + 1)
                 cell.font = Font(color="FF0000")
 
