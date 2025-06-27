@@ -63,7 +63,9 @@ def enrich_email(email):
             'Quality Score': score,
             'Risk Level': risk_level,
             'Recommended Action': action,
-            'Status': status
+            'Status': status,
+            'Reason': data.get('reason'),
+            'State': 'Deliverable' if status == 'Valid' else 'Undeliverable' if status == 'Invalid' else 'Risky' if status == 'Unknown' else 'Unknown'
         }
     except Exception as e:
         return {'Email': email, 'Error': str(e), 'Status': 'Error'}
@@ -104,7 +106,7 @@ if uploaded_file:
     for r in dataframe_to_rows(enriched_df, index=False, header=True):
         ws1.append(r)
 
-    ws2 = wb.create_sheet("Original Highlights")
+    ws2 = wb.create_sheet("Original w/ Highlights")
     for r_idx, row in enumerate(dataframe_to_rows(styled_df, index=False, header=True), 1):
         ws2.append(row)
         if r_idx == 1:
