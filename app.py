@@ -104,7 +104,7 @@ if uploaded_file:
     ws2 = wb.active
     ws2.title = "Original Highlights"
     for r in dataframe_to_rows(enriched_df, index=False, header=True):
-        ws1.append(r)
+        ws1.append(r) if ws1.title == "Enriched Emails" else ws2.append(r)
 
     ws1 = wb.create_sheet("Enriched Emails")
     for r_idx, row in enumerate(dataframe_to_rows(styled_df, index=False, header=True), 1):
