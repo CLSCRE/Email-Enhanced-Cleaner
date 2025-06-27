@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import requests
@@ -58,14 +59,9 @@ def enrich_email(email):
             'MX Found': data.get('mx'),
             'SMTP Check': data.get('smtp'),
             'Is Free Email': data.get('free'),
-            'Is Disposable': data.get('disposable'),
-            'Domain': data.get('domain'),
-            'Quality Score': score,
-            'Risk Level': risk_level,
-            'Recommended Action': action,
-            'Status': status,
             'Reason': data.get('reason'),
-            'State': 'Deliverable' if status == 'Valid' else 'Undeliverable' if status == 'Invalid' else 'Risky' if status == 'Unknown' else 'Unknown'
+            'Status': status,
+            'State': 'Deliverable' if status == 'Valid' else 'Undeliverable' if status == 'Invalid' else 'Risky'
         }
     except Exception as e:
         return {'Email': email, 'Error': str(e), 'Status': 'Error'}
@@ -97,30 +93,32 @@ if uploaded_file:
     st.dataframe(enriched_df)
 
     risky_emails = enriched_df[enriched_df['Status'].isin(['Invalid', 'Unknown', 'Error'])]['Email'].tolist()
+    reason_map = enriched_df.set_index("Email")["Reason"].to_dict()
     styled_df = df.copy()
 
     output = BytesIO()
     wb = Workbook()
-    ws2 = wb.active
-    ws2.title = "Original Highlights"
-    for r in dataframe_to_rows(enriched_df, index=False, header=True):
-        ws1.append(r) if ws1.title == "Enriched Emails" else ws2.append(r)
-
-    ws1 = wb.create_sheet("Enriched Emails")
+    # Remove the default sheet
+    wb.remove(wb.active)
+    # First tab: Original Highlights
+    ws_original = wb.create_sheet("Original Highlights")
     for r_idx, row in enumerate(dataframe_to_rows(styled_df, index=False, header=True), 1):
-        ws2.append(row)
+        ws_original.append(row)
         if r_idx == 1:
             continue
         for col in email_cols:
             email = styled_df.iloc[r_idx - 2][col]
-            reason_map = enriched_df.set_index("Email").get("Reason", pd.Series()).to_dict()
             email_lower = str(email).strip().lower()
+            cell = ws_original.cell(row=r_idx, column=styled_df.columns.get_loc(col) + 1)
             if email_lower in risky_emails:
                 cell.font = Font(color="FF0000")
             elif reason_map.get(email_lower, "").lower() == "accepted_email":
                 cell.font = Font(color="00AA00")
-                cell = ws2.cell(row=r_idx, column=styled_df.columns.get_loc(col) + 1)
-                cell.font = Font(color="FF0000")
+
+    # Second tab: Enriched Emails
+    ws_enriched = wb.create_sheet("Enriched Emails")
+    for r in dataframe_to_rows(enriched_df, index=False, header=True):
+        ws_enriched.append(r)
 
     wb.save(output)
-    st.download_button("📥 Download Results Excel", output.getvalue(), file_name="final_email_enrichment.xlsx")
+    st.download_button("📥 Download Results Excel", output.getvalue(), file_name="email_enrichment_final_output.xlsx")
