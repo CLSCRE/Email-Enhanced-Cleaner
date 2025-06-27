@@ -94,6 +94,7 @@ if uploaded_file:
         time.sleep(1)
 
     enriched_df = pd.DataFrame(enriched)
+    enriched_df.drop(columns=["Is Disposable", "Domain", "Quality Score", "Risk Level", "Recommended Action", "Status", "Reason", "State"], inplace=True, errors="ignore")
     st.dataframe(enriched_df)
 
     risky_emails = enriched_df[enriched_df['Status'].isin(['Invalid', 'Unknown', 'Error'])]['Email'].tolist()
@@ -114,6 +115,9 @@ if uploaded_file:
         for col in email_cols:
             email = styled_df.iloc[r_idx - 2][col]
             if str(email).strip().lower() in risky_emails:
+                cell.font = Font(color="FF0000")
+            elif str(enriched_df.set_index("Email").get("Reason", pd.Series()).get(str(email).strip().lower(), "").lower()) == "accepted_email":
+                cell.font = Font(color="00AA00")
                 cell = ws2.cell(row=r_idx, column=styled_df.columns.get_loc(col) + 1)
                 cell.font = Font(color="FF0000")
 
