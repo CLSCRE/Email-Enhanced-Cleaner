@@ -104,7 +104,7 @@ if uploaded_file:
     for r in dataframe_to_rows(enriched_df, index=False, header=True):
         ws1.append(r)
 
-    ws2 = wb.create_sheet("Original w/ Highlights")
+    ws2 = wb.create_sheet("Original Highlights")
     for r_idx, row in enumerate(dataframe_to_rows(styled_df, index=False, header=True), 1):
         ws2.append(row)
         if r_idx == 1:
