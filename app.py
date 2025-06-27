@@ -32,6 +32,16 @@ def evaluate_score(score):
     except:
         return ("Unknown", "Review")
 
+def classify_status(deliverable, smtp):
+    if deliverable and smtp:
+        return "Valid"
+    elif deliverable and not smtp:
+        return "Likely Valid"
+    elif deliverable is False:
+        return "Invalid"
+    else:
+        return "Unknown"
+
 def enrich_email(email):
     try:
         response = requests.get(BASE_URL, params={
@@ -43,7 +53,7 @@ def enrich_email(email):
         risk_level, action = evaluate_score(score)
         deliverable = data.get('deliverable')
         smtp = data.get('smtp')
-        status = 'Valid' if deliverable and smtp else 'Risky'
+        status = classify_status(deliverable, smtp)
         return {
             'Email': email,
             'Valid Format': data.get('format'),
@@ -87,8 +97,7 @@ if uploaded_file:
     enriched_df = pd.DataFrame(enriched)
     st.dataframe(enriched_df)
 
-    # Highlight risky emails in original DataFrame
-    risky_emails = enriched_df[enriched_df['Status'] != 'Valid']['Email'].tolist()
+    risky_emails = enriched_df[enriched_df['Status'].isin(['Invalid', 'Unknown', 'Error'])]['Email'].tolist()
     styled_df = df.copy()
 
     output = BytesIO()
@@ -110,4 +119,4 @@ if uploaded_file:
                 cell.font = Font(color="FF0000")
 
     wb.save(output)
-    st.download_button("📥 Download Results Excel", output.getvalue(), file_name="enriched_emails_with_risk_levels.xlsx")
+    st.download_button("📥 Download Results Excel", output.getvalue(), file_name="smarter_email_enrichment.xlsx")
